@@ -1,0 +1,249 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PointHolder : MonoBehaviour
+{
+    // 0 to 12 is the main path, 13 to 14 is the cage path, 15 to 16 is the tower path
+    public Vector2[] pointPositions;
+    public List<Point> allPoints;
+    public GameObject pointPrefab, characterIconPrefab;
+    private int[] mainLevel = { 0, 1, 2, 4, 6, 7, 10, 11, 12, 14, 16};
+    // Add avaliable levels in the list below. Eg. 0, 1, 2, 4, 6, 7, 10, 11, 12, 14, 16
+    public List<int> avaliableLevel;
+    private GameObject characterIconHolder;
+    private int currentPoint = 0;
+    public enum KeyPressed { Up, Down, Left, Right};
+    private KeyPressed keyPressed = KeyPressed.Right;
+    private bool isTraveling = false, isMoving = false;
+
+    private void Start()
+    {
+        for (int i = 0; i < pointPositions.Length; i++)
+        {
+            allPoints.Add(Instantiate(pointPrefab, pointPositions[i], Quaternion.identity).GetComponent<Point>());
+            if (IsLevelPoint(i))
+            {
+                allPoints[i].isPath = false;
+            }
+            allPoints[i].index = i;
+            allPoints[i].name = "Point" + " " + i;
+            allPoints[i].transform.SetParent(transform);
+        }
+
+        for (int i = 0; i < pointPositions.Length; i++)
+        {
+            switch (i)
+            {
+                case 0:
+                    allPoints[i].connectingPoints[3] = allPoints[i + 1];
+                    break;
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                case 9:
+                case 10:
+                case 11:
+                    if (i == 6)
+                    {
+                        allPoints[i].connectingPoints[1] = allPoints[i + 1];
+                    }
+                    if (i == 7)
+                    {
+                        allPoints[i].connectingPoints[0] = allPoints[i - 1];
+                        allPoints[i].connectingPoints[1] = allPoints[13];
+                    }
+                    if (i == 10)
+                    {
+                        allPoints[i].connectingPoints[1] = allPoints[15];
+                    }
+                    if (i == 11)
+                    {
+                        allPoints[i].connectingPoints[0] = allPoints[i + 1];
+                    }
+                    allPoints[i].connectingPoints[2] = allPoints[i - 1];
+                    allPoints[i].connectingPoints[3] = allPoints[i + 1];
+                    break;
+                case 12:
+                    allPoints[i].connectingPoints[1] = allPoints[i - 1];
+                    allPoints[i].connectingPoints[2] = allPoints[i - 1];
+                    break;
+                case 13:
+                    allPoints[i].connectingPoints[0] = allPoints[7];
+                    allPoints[i].connectingPoints[1] = allPoints[i + 1];
+                    break;
+                case 14:
+                    allPoints[i].connectingPoints[0] = allPoints[i - 1];
+                    break;
+                case 15:
+                    allPoints[i].connectingPoints[1] = allPoints[ i + 1];
+                    allPoints[i].connectingPoints[3] = allPoints[10];
+                    break;
+                case 16:
+                    allPoints[i].connectingPoints[3] = allPoints[ i - 1];
+                    break;
+
+            }
+        }
+        avaliableLevel.Add(0);
+        characterIconHolder = Instantiate(characterIconPrefab);
+        characterIconPrefab.transform.position = GetCurrentPosition(currentPoint);
+    }
+
+    public Vector2 GetCurrentPosition(int currentPoint)
+    {
+        return allPoints[currentPoint].transform.position;
+    }
+
+    private void Update()
+    {
+        if (isTraveling == false)
+        {
+            if (Input.GetKeyDown(KeyCode.A) && allPoints[currentPoint].connectingPoints[2] != null)
+            {
+                keyPressed = KeyPressed.Left;
+                isTraveling = true;
+            }
+            if (Input.GetKeyDown(KeyCode.D) && allPoints[currentPoint].connectingPoints[3] != null)
+            {
+                keyPressed = KeyPressed.Right;
+                isTraveling = true;
+            }
+            if (Input.GetKeyDown(KeyCode.W) && allPoints[currentPoint].connectingPoints[0] != null)
+            {
+                keyPressed = KeyPressed.Up;
+                isTraveling = true;
+            }
+            if (Input.GetKeyDown(KeyCode.S) && allPoints[currentPoint].connectingPoints[1] != null)
+            {
+                keyPressed = KeyPressed.Down;
+                isTraveling = true;
+            }
+            if (Input.GetKeyDown(KeyCode.Z))
+            {
+                Debug.Log("Level " + GetAvaliableLevelIndex(currentPoint));
+            }
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                string tempString = "[ ";
+                int[] tempPoints = GetSurroundingPossiblePoints(currentPoint);
+                for (int i = 0; i < tempPoints.Length; i++)
+                {
+                    tempString += tempPoints[i] + " ";
+                }
+                tempString += "]";
+
+                Debug.Log("Surrounding Points of Level: " + tempString);
+            }
+        }
+        else
+        {
+            if (isMoving == false)
+            {
+                if (isLevelAvaliable(allPoints[currentPoint].connectingPoints[GetDirectionalIndex(keyPressed)].index) == true){
+                    isMoving = true;
+                    StartCoroutine("MovePosition");
+                }
+                else
+                {
+                    isTraveling = false;
+                }
+            }
+        }
+    }
+    IEnumerator MovePosition()
+    {
+        do
+        {
+            characterIconHolder.transform.position = allPoints[currentPoint].connectingPoints[GetDirectionalIndex(keyPressed)].transform.position;
+            currentPoint = allPoints[currentPoint].connectingPoints[GetDirectionalIndex(keyPressed)].index;
+            yield return new WaitForSeconds(0.1f);
+        } while (allPoints[currentPoint].isPath == true && allPoints[currentPoint].connectingPoints[GetDirectionalIndex(keyPressed)] != null);
+        isMoving = false;
+        isTraveling = false;
+    }
+
+    public int GetDirectionalIndex(KeyPressed keypressed)
+    {
+        switch (keypressed)
+        {
+            case KeyPressed.Up:
+                return 0;
+            case KeyPressed.Down:
+                return 1;
+            case KeyPressed.Left:
+                return 2;
+            case KeyPressed.Right:
+                return 3;
+        }
+        return 0;
+    }
+
+    public bool IsLevelPoint(int value)
+    {
+        for(int i = 0; i < mainLevel.Length; i++)
+        {
+            if (mainLevel[i] == value)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public bool isLevelAvaliable(int value)
+    {
+        for (int i = 0; i < avaliableLevel.Count; i++)
+        {
+            if (avaliableLevel[i] == value)
+            {
+                return true;
+            }
+        }
+        if (allPoints[value].isPath == true && allPoints[value].connectingPoints[GetDirectionalIndex(keyPressed)] != null)
+        {
+            return isLevelAvaliable(allPoints[value].connectingPoints[GetDirectionalIndex(keyPressed)].index);
+        }
+        return false;
+    }
+
+    // Get the level in order
+    public int GetAvaliableLevelIndex(int value)
+    {
+        for(int i = 0; i < avaliableLevel.Count; i++)
+        {
+            if (avaliableLevel[i] == value)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public int[] GetSurroundingPossiblePoints(int value)
+    {
+        int[] tempPoints = new int[4];
+        for (int i = 0; i < 4; i++)
+        {
+            if (allPoints[value].connectingPoints[i] != null)
+            {
+                tempPoints[i] = allPoints[GetNearestPointIndex(value, i)].index;
+            }
+        }
+        return tempPoints;
+    }
+
+    public int GetNearestPointIndex(int pointIndex, int pointDirection)
+    {
+        if (allPoints[pointIndex].connectingPoints[pointDirection].isPath == false)
+        {
+            return allPoints[pointIndex].connectingPoints[pointDirection].index;
+        }
+        return GetNearestPointIndex(allPoints[pointIndex].connectingPoints[pointDirection].index, pointDirection);
+    }
+}
