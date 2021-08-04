@@ -267,7 +267,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 773433222}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.014, y: -0.014, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -318,13 +318,16 @@ MonoBehaviour:
   - {x: 5.5, y: 1.5}
   - {x: 0.25, y: -1.25}
   - {x: 0.25, y: -2.5}
-  - {x: 3, y: -2.5}
+  - {x: 3.5, y: -1.8}
+  - {x: 2.5, y: -2.5}
   - {x: 1.25, y: -1.7}
   allPoints: []
   pointPrefab: {fileID: 4933257202871918198, guid: 468301b55ef09e546a4bd23022235d8f,
     type: 3}
-  characterIconPrefab: {fileID: 9031121078603006144, guid: a36ef0899e52b7a4595ac6a76f53ffc7,
+  characterIconPrefab: {fileID: 4962641840762826218, guid: b3a03c3e230cea74796ad8d768aebb63,
     type: 3}
+  avaliableLevel: 
+  beatedLevel: 
 --- !u!4 &1604448738
 Transform:
   m_ObjectHideFlags: 0

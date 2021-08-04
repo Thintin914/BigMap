@@ -13,15 +13,6 @@ public class Point : MonoBehaviour
 
     private void Start()
     {
-        sr = GetComponent<SpriteRenderer>();
         sr.sortingLayerName = "point";
-        if (isPath)
-        {
-            sr.sprite = null;
-        }
-        else
-        {
-            sr.sprite = pointImages[0];
-        }
     }
 }

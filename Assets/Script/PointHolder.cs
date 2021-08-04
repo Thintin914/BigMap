@@ -4,13 +4,13 @@ using UnityEngine;
 
 public class PointHolder : MonoBehaviour
 {
-    // 0 to 12 is the main path, 13 to 14 is the cage path, 15 to 16 is the tower path
+    // 0 to 12 is the main path, 13 to 14 is the cage path, 15 to 17 is the tower path
     public Vector2[] pointPositions;
     public List<Point> allPoints;
     public GameObject pointPrefab, characterIconPrefab;
-    private int[] mainLevel = { 0, 1, 2, 4, 6, 7, 10, 11, 12, 14, 16};
-    // Add avaliable levels in the list below. Eg. 0, 1, 2, 4, 6, 7, 10, 11, 12, 14, 16
-    public List<int> avaliableLevel;
+    private int[] mainLevel = { 0, 1, 2, 4, 6, 7, 10, 11, 12, 14, 17};
+    // Add avaliable levels in the list below. Eg. 0, 1, 2, 4, 6, 7, 10, 11, 12, 14, 17
+    public List<int> avaliableLevel, beatedLevel;
     private GameObject characterIconHolder;
     private int currentPoint = 0;
     public enum KeyPressed { Up, Down, Left, Right};
@@ -29,6 +29,29 @@ public class PointHolder : MonoBehaviour
             allPoints[i].index = i;
             allPoints[i].name = "Point" + " " + i;
             allPoints[i].transform.SetParent(transform);
+            allPoints[i].sr = allPoints[i].GetComponent<SpriteRenderer>();
+            allPoints[i].transform.localScale = new Vector2(0.5f, 0.5f);
+        }
+
+        if (avaliableLevel.Contains(0) == false)
+        {
+            avaliableLevel.Add(0);
+        }
+
+        for (int i = 0; i < pointPositions.Length; i++)
+        {
+            if (avaliableLevel.Contains(i))
+            {
+                if (beatedLevel.Contains(i) == false)
+                {
+                    allPoints[i].sr.sprite = allPoints[i].pointImages[0];
+                }
+                else
+                {
+                    allPoints[i].transform.localScale = new Vector2(1.5f, 1.5f);
+                    allPoints[i].sr.sprite = allPoints[i].pointImages[1];
+                }
+            }
         }
 
         for (int i = 0; i < pointPositions.Length; i++)
@@ -36,6 +59,7 @@ public class PointHolder : MonoBehaviour
             switch (i)
             {
                 case 0:
+                    allPoints[i].connectingPoints[1] = allPoints[i + 1];
                     allPoints[i].connectingPoints[3] = allPoints[i + 1];
                     break;
                 case 1:
@@ -49,6 +73,14 @@ public class PointHolder : MonoBehaviour
                 case 9:
                 case 10:
                 case 11:
+                    if (i == 1)
+                    {
+                        allPoints[i].connectingPoints[0] = allPoints[i - 1];
+                    }
+                    if (i == 4 || i == 5)
+                    {
+                        allPoints[i].connectingPoints[0] = allPoints[i + 1];
+                    }
                     if (i == 6)
                     {
                         allPoints[i].connectingPoints[1] = allPoints[i + 1];
@@ -81,16 +113,22 @@ public class PointHolder : MonoBehaviour
                     allPoints[i].connectingPoints[0] = allPoints[i - 1];
                     break;
                 case 15:
+                    allPoints[i].connectingPoints[0] = allPoints[10];
                     allPoints[i].connectingPoints[1] = allPoints[ i + 1];
                     allPoints[i].connectingPoints[3] = allPoints[10];
                     break;
                 case 16:
+                    allPoints[i].connectingPoints[0] = allPoints[i - 1];
+                    allPoints[i].connectingPoints[1] = allPoints[i + 1];
+                    allPoints[i].connectingPoints[3] = allPoints[i - 1];
+                    break;
+                case 17:
+                    allPoints[i].connectingPoints[0] = allPoints[i - 1];
                     allPoints[i].connectingPoints[3] = allPoints[ i - 1];
                     break;
 
             }
         }
-        avaliableLevel.Add(0);
         characterIconHolder = Instantiate(characterIconPrefab);
         characterIconPrefab.transform.position = GetCurrentPosition(currentPoint);
     }
@@ -126,19 +164,28 @@ public class PointHolder : MonoBehaviour
             }
             if (Input.GetKeyDown(KeyCode.Z))
             {
-                Debug.Log("Level " + GetAvaliableLevelIndex(currentPoint));
+                Debug.Log("Level " + avaliableLevel.IndexOf(currentPoint));
             }
-            if (Input.GetKeyDown(KeyCode.Q))
+            if (Input.GetKeyDown(KeyCode.O))
             {
-                string tempString = "[ ";
-                int[] tempPoints = GetSurroundingPossiblePoints(currentPoint);
-                for (int i = 0; i < tempPoints.Length; i++)
+                if (beatedLevel.Contains(currentPoint) == false)
                 {
-                    tempString += tempPoints[i] + " ";
+                    beatedLevel.Add(currentPoint);
+                    allPoints[currentPoint].sr.sprite = allPoints[currentPoint].pointImages[1];
+                    allPoints[currentPoint].transform.localScale = new Vector2(1.5f, 1.5f);
                 }
-                tempString += "]";
-
-                Debug.Log("Surrounding Points of Level: " + tempString);
+            }
+            if (Input.GetKeyDown(KeyCode.P))
+            {
+                int[] tempPoints = GetSurroundingPossiblePoints(currentPoint);
+                for (int i = 0; i < 4; i++)
+                {
+                    if (avaliableLevel.Contains(tempPoints[i]) == false)
+                    {
+                        avaliableLevel.Add(tempPoints[i]);
+                        allPoints[tempPoints[i]].sr.sprite = allPoints[tempPoints[i]].pointImages[0];
+                    }
+                }
             }
         }
         else
@@ -210,19 +257,6 @@ public class PointHolder : MonoBehaviour
             return isLevelAvaliable(allPoints[value].connectingPoints[GetDirectionalIndex(keyPressed)].index);
         }
         return false;
-    }
-
-    // Get the level in order
-    public int GetAvaliableLevelIndex(int value)
-    {
-        for(int i = 0; i < avaliableLevel.Count; i++)
-        {
-            if (avaliableLevel[i] == value)
-            {
-                return i;
-            }
-        }
-        return -1;
     }
 
     public int[] GetSurroundingPossiblePoints(int value)
